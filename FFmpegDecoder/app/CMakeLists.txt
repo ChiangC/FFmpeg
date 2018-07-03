@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(libs/include)
-set(DIR ../../../../libs)
+#set(DIR ../../../../libs)
+set(DIR ${CMAKE_SOURCE_DIR}/libs)
 MESSAGE("-------DIR:  " ${DIR})
 
 add_library( native-lib
