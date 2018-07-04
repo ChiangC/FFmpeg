@@ -14,8 +14,8 @@ extern "C"{
 }
 
 
-#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"jason",FORMAT,##__VA_ARGS__);
-#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"jason",FORMAT,##__VA_ARGS__);
+#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"FMPlayer",FORMAT,##__VA_ARGS__);
+#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"FMPlayer",FORMAT,##__VA_ARGS__);
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -23,113 +23,94 @@ Java_com_fmtech_fmplayer_view_VideoView_render(JNIEnv *env, jobject instance, js
                                                jobject surface) {
     const char *videoUrl = env->GetStringUTFChars(videoUrl_, 0);
 
-    // TODO
     av_register_all();
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
-    //第四个参数是 可以传一个 字典   是一个入参出参对象
-    if (avformat_open_input(&pFormatCtx, videoUrl, NULL, NULL) != 0) {
-        LOGE("%s","打开输入视频文件失败");
-    }
-    //3.获取视频信息
-    if(avformat_find_stream_info(pFormatCtx,NULL) < 0){
-        LOGE("%s","获取视频信息失败");
+    if(avformat_open_input(&pFormatCtx, videoUrl, NULL, NULL) != 0){//0 on success, a negative AVERROR on failure.
+        LOGE("Open input failed");
         return;
     }
 
+    if(avformat_find_stream_info(pFormatCtx, NULL) < 0){
+        LOGE("Get video info failed.");
+        return;
+    }
 
-    int vidio_stream_idx=-1;
-    int i=0;
-    for (int i = 0; i < pFormatCtx->nb_streams; ++i) {
-        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-            LOGE("  找到视频id %d", pFormatCtx->streams[i]->codec->codec_type);
-            vidio_stream_idx=i;
+    int video_stream_idx = -1;
+    int i = 0;
+    for(; i < pFormatCtx->nb_streams; i++){
+        if(pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
+            video_stream_idx = i;
             break;
         }
     }
 
-//    获取视频编解码器
-    AVCodecContext *pCodecCtx=pFormatCtx->streams[vidio_stream_idx]->codec;
-    LOGE("获取视频编码器上下文 %p  ",pCodecCtx);
-//    加密的用不了
-    AVCodec *pCodex = avcodec_find_decoder(pCodecCtx->codec_id);
-    LOGE("获取视频编码 %p",pCodex);
-//版本升级了
-    if (avcodec_open2(pCodecCtx, pCodex, NULL)<0) {
-
-
+    AVCodecContext *pCodecCtx = pFormatCtx->streams[video_stream_idx]->codec;
+    AVCodec *pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
+    //Initialize the AVCodecContext to use the given AVCodec.
+    if(avcodec_open2(pCodecCtx, pCodec, NULL) < 0){
+        LOGE("AVCodec open failed.");
+        return;
     }
-    AVPacket *packet = (AVPacket *)av_malloc(sizeof(AVPacket));
-//    av_init_packet(packet);
-//    像素数据
+
+    AVPacket *packet = (AVPacket*)av_malloc(sizeof(AVPacket));
     AVFrame *frame;
     frame = av_frame_alloc();
-//    RGB
     AVFrame *rgb_frame = av_frame_alloc();
-//    给缓冲区分配内存
-    //只有指定了AVFrame的像素格式、画面大小才能真正分配内存
-    //缓冲区分配内存
-    uint8_t   *out_buffer= (uint8_t *) av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA, pCodecCtx->width, pCodecCtx->height));
-    LOGE("宽  %d,  高  %d  ",pCodecCtx->width,pCodecCtx->height);
-//设置yuvFrame的缓冲区，像素格式
-    int re= avpicture_fill((AVPicture *) rgb_frame, out_buffer, AV_PIX_FMT_RGBA, pCodecCtx->width, pCodecCtx->height);
-    LOGE("申请内存%d   ",re);
 
-//    输出需要改变
-    int length=0;
+    uint8_t  *out_buffer = (uint8_t*)av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA, pCodecCtx->width, pCodecCtx->height));
+
+    //the size in bytes required for src, a negative error code in case of failure
+    int memSize = avpicture_fill((AVPicture*)rgb_frame, out_buffer, AV_PIX_FMT_RGBA, pCodecCtx->width, pCodecCtx->height);
+
+    int length = 0;
     int got_frame;
-//    输出文件
-    int frameCount=0;
-    SwsContext *swsContext = sws_getContext(pCodecCtx->width,pCodecCtx->height,pCodecCtx->pix_fmt,
-                                            pCodecCtx->width,pCodecCtx->height,AV_PIX_FMT_RGBA,SWS_BICUBIC,NULL,NULL,NULL
-    );
-    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
-//    视频缓冲区
-    ANativeWindow_Buffer outBuffer;
-//    ANativeWindow
-    while (av_read_frame(pFormatCtx, packet)>=0) {
-//        AvFrame
-        if (packet->stream_index == vidio_stream_idx) {
-            length = avcodec_decode_video2(pCodecCtx, frame, &got_frame, packet);
-            LOGE(" 获得长度   %d ", length);
 
-//非零   正在解码
-            if (got_frame) {
-//            绘制之前   配置一些信息  比如宽高   格式
-                ANativeWindow_setBuffersGeometry(nativeWindow, pCodecCtx->width, pCodecCtx->height,
-                                                 WINDOW_FORMAT_RGBA_8888);
-//            绘制
+    int frameCount = 0;
+
+    SwsContext *swsContext = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
+                                            pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_RGBA, SWS_BICUBIC, NULL, NULL, NULL);
+
+    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
+    ANativeWindow_Buffer outBuffer;
+
+    while(av_read_frame(pFormatCtx, packet) >= 0){
+        if(packet->stream_index == video_stream_idx){
+            length = avcodec_decode_video2(pCodecCtx, frame, &got_frame, packet);
+
+            if(got_frame){
+                ANativeWindow_setBuffersGeometry(nativeWindow, pCodecCtx->width, pCodecCtx->height, WINDOW_FORMAT_RGBA_8888);
+
                 ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
-//     h 264   ----yuv          RGBA
-                LOGI("解码%d帧",frameCount++);
-                //转为指定的YUV420P
-                sws_scale(swsContext, (const uint8_t *const *) frame->data, frame->linesize, 0
-                        , pCodecCtx->height, rgb_frame->data,
-                          rgb_frame->linesize);
-//rgb_frame是有画面数据
-                uint8_t *dst= (uint8_t *) outBuffer.bits;
-//            拿到一行有多少个字节 RGBA
-                int destStride=outBuffer.stride*4;
-//像素数据的首地址
-                uint8_t * src= (uint8_t *) rgb_frame->data[0];
-//            实际内存一行数量
+
+                LOGI("Decode %d frame", frameCount++);
+
+                sws_scale(swsContext, (const uint8_t *const *) frame->data, frame->linesize, 0, pCodecCtx->height, rgb_frame->data, rgb_frame->linesize);
+
+                uint8_t *dst = (uint8_t*)outBuffer.bits;
+                int destStride = outBuffer.stride*4;
+                uint8_t *src = (uint8_t*)rgb_frame->data[0];
+
                 int srcStride = rgb_frame->linesize[0];
-                int i=0;
-                for (int i = 0; i < pCodecCtx->height; ++i) {
-//                memcpy(void *dest, const void *src, size_t n)
-                    memcpy(dst + i * destStride,  src + i * srcStride, srcStride);
+                int i =0;
+                for(;i < pCodecCtx->height; i++){
+                    memcpy(dst + i*destStride, src + i * srcStride, srcStride);
                 }
-//
                 ANativeWindow_unlockAndPost(nativeWindow);
                 usleep(1000 * 16);
             }
         }
         av_free_packet(packet);
     }
+
     ANativeWindow_release(nativeWindow);
     av_frame_free(&frame);
+    av_frame_free(&rgb_frame);
     avcodec_close(pCodecCtx);
     avformat_free_context(pFormatCtx);
+    avformat_close_input(&pFormatCtx);
 
     env->ReleaseStringUTFChars(videoUrl_, videoUrl);
 }
+
+//Fatal signal 11 (SIGSEGV), code 1, fault addr 0x58 in tid 32007 (Thread-5)

@@ -36,11 +36,17 @@ public class VideoView extends SurfaceView {
     }
 
     public VideoView(Context context) {
-        super(context);
+        this(context, null);
+
     }
 
     public VideoView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
+    }
+
+    public VideoView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
         init();
     }
 
@@ -54,7 +60,6 @@ public class VideoView extends SurfaceView {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-//        绘制功能 不需要交给SurfaveView        VideoView.this.getHolder().getSurface()
                     render(url, VideoView.this.getHolder().getSurface());
                 }
             }).start();
