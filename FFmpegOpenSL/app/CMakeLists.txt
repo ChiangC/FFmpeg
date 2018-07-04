@@ -82,4 +82,5 @@ target_link_libraries(
                       swresample-1
                       swscale-3
                       ${log-lib}
-                      android)
+                      android
+                      OpenSLES)
