@@ -36,7 +36,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playVideo(){
-        mVideoView.playVideo(Environment.getExternalStorageDirectory().getAbsolutePath() +"/self_driving.mp4");
+        mVideoView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mVideoView.playVideo(Environment.getExternalStorageDirectory().getAbsolutePath() +"/self_driving.mp4");
+            }
+        }, 1000);
     }
 
     @Override

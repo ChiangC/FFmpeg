@@ -5,11 +5,11 @@
 
 extern "C"{
 #include "libavutil/frame.h"
-#include <android/native_window.h>
 #include "libavcodec/avcodec.h"
 #include "libswscale/swscale.h"
+#include "libavformat/avformat.h"
 #include <unistd.h>
-#include <libavformat/avformat.h>
+#include <android/native_window.h>
 #include <android/native_window_jni.h>
 }
 
@@ -62,6 +62,7 @@ Java_com_fmtech_fmplayer_view_VideoView_render(JNIEnv *env, jobject instance, js
 
     //the size in bytes required for src, a negative error code in case of failure
     int memSize = avpicture_fill((AVPicture*)rgb_frame, out_buffer, AV_PIX_FMT_RGBA, pCodecCtx->width, pCodecCtx->height);
+    LOGI("%d bytes required for src.", memSize);
 
     int length = 0;
     int got_frame;
@@ -80,7 +81,6 @@ Java_com_fmtech_fmplayer_view_VideoView_render(JNIEnv *env, jobject instance, js
 
             if(got_frame){
                 ANativeWindow_setBuffersGeometry(nativeWindow, pCodecCtx->width, pCodecCtx->height, WINDOW_FORMAT_RGBA_8888);
-
                 ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
 
                 LOGI("Decode %d frame", frameCount++);
@@ -93,7 +93,7 @@ Java_com_fmtech_fmplayer_view_VideoView_render(JNIEnv *env, jobject instance, js
 
                 int srcStride = rgb_frame->linesize[0];
                 int i =0;
-                for(;i < pCodecCtx->height; i++){
+                for(i =0;i < pCodecCtx->height; i++){
                     memcpy(dst + i*destStride, src + i * srcStride, srcStride);
                 }
                 ANativeWindow_unlockAndPost(nativeWindow);
@@ -107,8 +107,8 @@ Java_com_fmtech_fmplayer_view_VideoView_render(JNIEnv *env, jobject instance, js
     av_frame_free(&frame);
     av_frame_free(&rgb_frame);
     avcodec_close(pCodecCtx);
-    avformat_free_context(pFormatCtx);
     avformat_close_input(&pFormatCtx);
+    avformat_free_context(pFormatCtx);
 
     env->ReleaseStringUTFChars(videoUrl_, videoUrl);
 }
