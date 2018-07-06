@@ -25,7 +25,7 @@ public class MusicPlayer {
         System.loadLibrary("native-lib");
     }
 
-    public native void play();
+    public native void play(String path);
 
     public native void stop();
 

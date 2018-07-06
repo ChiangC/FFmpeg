@@ -7,7 +7,8 @@ MESSAGE("DIR "${DIR})
 
 add_library( native-lib
              SHARED
-             src/main/cpp/native-lib.cpp )
+             src/main/cpp/native-lib.cpp
+             src/main/cpp/FFmpegMusic.cpp)
 
 add_library(avcodec-56
             SHARED
