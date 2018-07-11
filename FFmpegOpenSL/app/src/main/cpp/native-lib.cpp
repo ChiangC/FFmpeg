@@ -18,7 +18,7 @@ extern "C" {
 
 SLObjectItf engineObject = NULL;
 SLEngineItf engineEngine = NULL;
-//混音器
+
 SLObjectItf outputMixObject = NULL;
 SLEnvironmentalReverbItf outputMixEnvironmentalReverbItf = NULL;
 //SLEnvironmentalReverbSettings reverbSettings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;
@@ -26,9 +26,9 @@ SLEnvironmentalReverbSettings reverbSettings = SL_I3DL2_ENVIRONMENT_PRESET_STONE
 
 SLObjectItf bqPlayerObject;
 SLPlayItf  bqPlayerPlay;
-//队列缓冲区
+
 SLAndroidSimpleBufferQueueItf  bqPlayerBufferQueue;
-//音量对象
+
 SLVolumeItf bqPlayerVolume;
 
 void *buffer;
@@ -50,21 +50,26 @@ Java_com_fmtech_ffmpegopensl_MusicPlayer_play(JNIEnv *env, jobject instance, jst
 
     SLresult sLresult;
 
-    //初始化一个引擎
+    // create engine
     slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    // realize the engine
     (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
-    //获取引擎接口
+    // get the engine interface, which is needed in order to create other objects
     (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
 
 
-    //创建混音器
+    // create output mix, with environmental reverb specified as a non-required interface
     const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
     const SLboolean mreq[1] = {SL_BOOLEAN_FALSE};
-//    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
     (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);
+
+    // realize the output mix
     (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
 
-    //设置环境混响
+    // get the environmental reverb interface
+    // this could fail if the environmental reverb effect is not available,
+    // either because the feature is not present, excessive CPU load, or
+    // the required MODIFY_AUDIO_SETTINGS permission was not requested and granted
     sLresult = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
                                                 &outputMixEnvironmentalReverbItf);
 
@@ -130,7 +135,7 @@ Java_com_fmtech_ffmpegopensl_MusicPlayer_play(JNIEnv *env, jobject instance, jst
     (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
     (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
 
-    //播放第一帧
+    //play
     bqPlayerCallback(bqPlayerBufferQueue, NULL);
 
 
