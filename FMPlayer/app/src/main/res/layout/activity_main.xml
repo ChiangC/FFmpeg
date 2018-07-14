@@ -19,7 +19,7 @@
         android:paddingRight="5dp"
         android:background="@drawable/fmplayer_txt_bg"
         android:textColor="@color/white_opacity50"
-        android:text="FMPlayer"
+        android:text="fmplayer"
         android:textStyle="bold"
         android:textSize="26sp"/>
 
