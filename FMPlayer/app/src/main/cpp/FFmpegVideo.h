@@ -21,7 +21,10 @@
 
 extern "C"
 {
+#include <pthread.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/time.h>
+#include <libswscale/swscale.h>
 
 class FFmpegVideo {
 public:
@@ -64,7 +67,7 @@ public:
 
     AVRational time_base;
 
-    double clock;
+    double video_clock;
 
 };
 

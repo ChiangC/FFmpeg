@@ -23,17 +23,6 @@ import org.w3c.dom.Text;
  */
 
 public class VideoView extends SurfaceView {
-    static{
-        System.loadLibrary("avcodec-56");
-        System.loadLibrary("avdevice-56");
-        System.loadLibrary("avfilter-5");
-        System.loadLibrary("avformat-56");
-        System.loadLibrary("avutil-54");
-        System.loadLibrary("postproc-53");
-        System.loadLibrary("swresample-1");
-        System.loadLibrary("swscale-3");
-        System.loadLibrary("native-lib");
-    }
 
     public VideoView(Context context) {
         this(context, null);
@@ -55,7 +44,7 @@ public class VideoView extends SurfaceView {
         holder.setFormat(PixelFormat.RGBA_8888);
     }
 
-    public void playVideo(final String url){
+   /* public void playVideo(final String url){
         if(!TextUtils.isEmpty(url)){
             new Thread(new Runnable() {
                 @Override
@@ -64,8 +53,8 @@ public class VideoView extends SurfaceView {
                 }
             }).start();
         }
-    }
+    }*/
 
-    public native void render(String videoUrl, Surface surface);
+//    public native void render(String videoUrl, Surface surface);
 
 }
