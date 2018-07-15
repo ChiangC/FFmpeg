@@ -70,6 +70,7 @@ int FFmpegAudio::get(AVPacket *packet) {
             AVPacket *pkt = queue.front();
             queue.pop();
             av_free(pkt);
+            break;
         }else{
             pthread_cond_wait(&cond, &mutex);
         }
@@ -148,7 +149,7 @@ void FFmpegAudio::stop() {
 }
 
 int getPcm(FFmpegAudio *audio){
-    int got_grame;
+    int got_frame;
     int size;
     AVPacket *packet = (AVPacket*)av_malloc(sizeof(AVPacket));
     AVFrame *frame = av_frame_alloc();
@@ -160,9 +161,9 @@ int getPcm(FFmpegAudio *audio){
             audio->audio_clock = av_q2d(audio->time_base) * packet->pts;
         }
 
-        avcodec_decode_audio4(audio->codecCtx, frame, &got_grame, packet);
+        avcodec_decode_audio4(audio->codecCtx, frame, &got_frame, packet);
 
-        if(got_grame){
+        if(got_frame){
             swr_convert(audio->swrContext, &audio->out_buffer, 44100 * 2,
                         (const uint8_t **)frame->data, frame->nb_samples);
 

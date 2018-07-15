@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
         mVideoView = (VideoView) findViewById(R.id.video_view);
         mFMPlayer = new FMPlayer(mVideoView);
 
+
         checkPermission();
     }
 
@@ -54,5 +55,11 @@ public class MainActivity extends AppCompatActivity {
         if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
             playVideo();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mFMPlayer.release();
     }
 }
