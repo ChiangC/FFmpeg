@@ -40,7 +40,7 @@ FFmpegAudio::~FFmpegAudio() {
 int initAudio(FFmpegAudio *audio){
     audio->swrContext = swr_alloc();
 
-    audio->out_buffer = (uint8_t *)av_malloc(44100 * 2);
+    audio->out_buffer = (uint8_t *)av_mallocz(44100 * 2);
     uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
 
     enum AVSampleFormat out_format = AV_SAMPLE_FMT_S16;
@@ -151,7 +151,7 @@ void FFmpegAudio::stop() {
 int getPcm(FFmpegAudio *audio){
     int got_frame;
     int size;
-    AVPacket *packet = (AVPacket*)av_malloc(sizeof(AVPacket));
+    AVPacket *packet = (AVPacket*)av_mallocz(sizeof(AVPacket));
     AVFrame *frame = av_frame_alloc();
 
     while(audio->isPlay){

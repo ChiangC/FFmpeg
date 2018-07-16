@@ -79,7 +79,7 @@ void *play_video(void *arg){
                                         AV_PIX_FMT_RGBA, SWS_BILINEAR, NULL, NULL, NULL);
 
     AVFrame *rgb_frame = av_frame_alloc();
-    uint8_t *out_buffer = (uint8_t*)av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA, video->codecCtx->width, video->codecCtx->height));
+    uint8_t *out_buffer = (uint8_t*)av_mallocz(avpicture_get_size(AV_PIX_FMT_RGBA, video->codecCtx->width, video->codecCtx->height));
     /**
     * Setup the picture fields based on the specified image parameters
     * and the provided image data buffer.
@@ -116,6 +116,7 @@ void *play_video(void *arg){
             pts = 0;
         }
 
+        //Relative to the first frame play time
         play = pts * av_q2d(video->time_base);
         //correct time
         play = video->synchronize(frame, play);
@@ -128,6 +129,7 @@ void *play_video(void *arg){
         last_play = play;
 
         diff = video->video_clock - audio_clock;
+        //0<=0ms and <= 10ms
         sync_thresdhold = (delay > 0.01? 0.01 : delay);
 
         if(fabs(diff) < 10){
@@ -139,7 +141,7 @@ void *play_video(void *arg){
         }
 
         start_time += delay;
-        actual_delay = start_time - av_gettime()/1000000.0;
+        actual_delay = start_time - av_gettime()/1000000.0;//Above code execution takes time
         if(actual_delay < 0.01){
             actual_delay = 0.01;
         }
